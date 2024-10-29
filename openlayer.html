@@ -1,0 +1,45 @@
+<!DOCTYPE html>  <html lang="en"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GeoJSON with OpenLayers</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@9.2.4/dist/ol.css" type="text/css">
+    <script src="https://cdn.jsdelivr.net/npm/ol@9.2.4/dist/ol.js"></script>
+    <style>        #map {            height: 80vh;            width: 100%;        }
+    </style></head><body>
+        <input id="geojson-file" type="file" accept=".geojson">
+        <div id="map"></div>
+        <script>
+            var map = new ol.Map(
+                { target: 'map',  layers: [
+                    new ol.layer.Tile({                    source: new ol.source.OSM()                })            ]
+                    ,            view:
+                        new ol.View({  center: ol.proj.fromLonLat([110.4074, 30.9042]),   zoom: 4}) });
+        document.getElementById('geojson-file').addEventListener
+        ('change', function(e) {
+            var file = e.target.files[0];
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    var geoJsonData = JSON.parse(e.target.result);
+                    var vectorSource = new ol.source.Vector({
+                        features: (new ol.format.GeoJSON()).readFeatures(
+                            geoJsonData, {dataProjection: 'EPSG:4326',featureProjection: 'EPSG:3857'})                    });
+                    if (vectorSource.getFeatures().length > 0)
+                    {
+                        var vectorLayer = new ol.layer.Vector(
+                            {
+                            source: vectorSource
+                            });
+                        map.addLayer(vectorLayer);
+                        map.getView().fit(vectorSource.getExtent(), map.getSize());
+                    }
+                    else {
+                        console.log('No features found in the GeoJSON data.');
+                    }
+                }
+                catch (error) {
+                    console.error('Error parsing GeoJSON:', error);
+                }
+            };
+            reader.readAsText(file);});
+        </script>  </body>  </html>
